@@ -37,7 +37,7 @@ public class User {
     private String email;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "user_authorities", joinColumns =
+    @JoinTable(name = "user_authorities.sql", joinColumns =
     @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "authority_id")
     )
     private List<Authority> authorities;

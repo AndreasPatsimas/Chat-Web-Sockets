@@ -9,8 +9,8 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(exclude = {"sender", "receiver"})
-@ToString(exclude = {"sender", "receiver"})
+@EqualsAndHashCode(exclude = {"sender", "recipient"})
+@ToString(exclude = {"sender", "recipient"})
 @Entity
 @Table(name = "messages")
 public class Message {
@@ -25,8 +25,8 @@ public class Message {
     private User sender;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "receiver_id")
-    private User receiver;
+    @JoinColumn(name = "recipient_id")
+    private User recipient;
 
     @Column(name = "content")
     private String content;

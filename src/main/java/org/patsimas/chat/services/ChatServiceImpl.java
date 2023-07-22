@@ -79,7 +79,7 @@ public class ChatServiceImpl implements ChatService {
         Message message = messageRepository.save(Message.builder()
                 .id(messageRequestDto.getMessageId())
                 .sender(sender)
-                .receiver(receiver)
+                .recipient(receiver)
                 .content(messageRequestDto.getContent())
                 .recordDate(Instant.now())
                 .build());

@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
 
@@ -22,4 +24,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
             "(receiver_id = :senderId or receiver_id = :receiverId)",
             nativeQuery = true)
     int countByUsers(@Param("senderId") long senderId, @Param("receiverId") long receiverId);
+
+    List<Message> findAllByRecipientAndSender(String recipient, String sender);
 }

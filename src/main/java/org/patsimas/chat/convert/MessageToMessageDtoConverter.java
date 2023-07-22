@@ -16,7 +16,7 @@ public class MessageToMessageDtoConverter implements Converter<Message, MessageD
     public MessageDto convert(Message message) {
 
         User sender = message.getSender();
-        User receiver = message.getReceiver();
+        User receiver = message.getRecipient();
 
         String senderFullName = buildFullName(sender);
         String receiverFullName = buildFullName(receiver);

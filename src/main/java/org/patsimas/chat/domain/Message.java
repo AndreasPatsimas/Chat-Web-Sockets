@@ -2,6 +2,7 @@ package org.patsimas.chat.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
@@ -9,8 +10,6 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(exclude = {"sender", "recipient"})
-@ToString(exclude = {"sender", "recipient"})
 @Entity
 @Table(name = "messages")
 public class Message {

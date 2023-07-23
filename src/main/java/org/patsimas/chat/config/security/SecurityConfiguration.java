@@ -3,6 +3,7 @@ package org.patsimas.chat.config.security;
 import lombok.RequiredArgsConstructor;
 import org.patsimas.chat.config.security.filters.JwtRequestFilter;
 import org.patsimas.chat.services.MyUserDetailsService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,7 +28,6 @@ public class SecurityConfiguration {
     private final JwtRequestFilter jwtRequestFilter;
     private final JwtAuthenticationEntryPoint unAuthorizedHandler;
 
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
@@ -35,15 +35,25 @@ public class SecurityConfiguration {
                 .exceptionHandling()
                 .authenticationEntryPoint(unAuthorizedHandler)
                 .and()
+                .headers()
+                .frameOptions()
+                .disable()
+                .and()
                 .authorizeHttpRequests()
-                .requestMatchers("/chat/**").permitAll()
+                .requestMatchers("/index.html").permitAll()
+                .requestMatchers("/chat.html").permitAll()
                 .requestMatchers("/ws").permitAll()
                 .requestMatchers("/ws/**").permitAll()
-                .requestMatchers("/index.html").permitAll()
                 .requestMatchers("/authenticate").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
-                .and().sessionManagement()
+                .and()
+                .logout()
+                .logoutSuccessUrl("/index.html")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .and()
+                .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authenticationProvider(authenticationProvider())

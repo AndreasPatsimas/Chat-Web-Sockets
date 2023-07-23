@@ -44,15 +44,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return AuthenticationResponse.builder()
                 .jwt(jwt)
                 .authenticationStatus(AuthenticationStatus.AUTHENTICATION_SUCCEEDED)
-                .email(authenticationRequest.getEmail())
+                .username(authenticationRequest.getUsername())
                 .build();
     }
 
     private String getToken(AuthenticationRequest authenticationRequest, Map<String, Object> claims){
 
-        authenticate(new UsernamePasswordAuthenticationToken(authenticationRequest.getEmail(),
+        authenticate(new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(),
                 authenticationRequest.getPassword()));
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticationRequest.getEmail());
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticationRequest.getUsername());
         return jwtTokenProvider.generateToken(claims, userDetails.getUsername());
     }
 

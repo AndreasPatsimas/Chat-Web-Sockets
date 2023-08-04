@@ -11,4 +11,5 @@ public class AuthenticationResponse {
     private final String jwt;
     private AuthenticationStatus authenticationStatus;
     private String email;
+    private String username;
 }

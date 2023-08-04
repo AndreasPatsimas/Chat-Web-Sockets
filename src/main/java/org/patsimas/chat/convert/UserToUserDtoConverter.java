@@ -29,7 +29,7 @@ public class UserToUserDtoConverter implements Converter<User, UserDto> {
 
 		StringJoiner authorities = new StringJoiner(",");
 
-		user.getAuthorities().forEach(authority -> authorities.add(authority.getDescription().toString()));
+		//user.getAuthorities().forEach(authority -> authorities.add(authority.getDescription().toString()));
 		return authorities.toString();
 	}
 

@@ -2,10 +2,13 @@ package org.patsimas.chat.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.patsimas.chat.domain.Group;
 import org.patsimas.chat.domain.Message;
+import org.patsimas.chat.dao.MessageDAO;
 import org.patsimas.chat.domain.User;
 import org.patsimas.chat.dto.messages.MessageDto;
 import org.patsimas.chat.dto.messages.MessageRequestDto;
+import org.patsimas.chat.repositories.GroupRepository;
 import org.patsimas.chat.repositories.MessageRepository;
 import org.patsimas.chat.utils.UserUtils;
 import org.springframework.core.convert.ConversionService;
@@ -16,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.patsimas.chat.config.security.Authorization.authorizeRequest;
 
@@ -27,6 +31,8 @@ public class ChatServiceImpl implements ChatService {
     private final MessageRepository messageRepository;
     private final ConversionService conversionService;
     private final UserUtils userUtils;
+
+    private final GroupRepository groupRepository;
 
     @Override
     public List<MessageDto> fetchByUsers(String senderEmail, String receiverEmail, Pageable pageable) {
@@ -79,7 +85,6 @@ public class ChatServiceImpl implements ChatService {
         Message message = messageRepository.save(Message.builder()
                 .id(messageRequestDto.getMessageId())
                 .sender(sender)
-                .receiver(receiver)
                 .content(messageRequestDto.getContent())
                 .recordDate(Instant.now())
                 .build());
@@ -89,5 +94,55 @@ public class ChatServiceImpl implements ChatService {
         log.info("Save message for sender[email:{}] and receiver[email{}] process end", senderEmail, receiverEmail);
 
         return messageDto;
+    }
+
+    @Override
+    public List<MessageDto> fetchOldChat(Long userId) {
+
+        log.info("Fetch messages for user[id:{}] process begins", userId);
+
+        User user = userUtils.fetch(userId);
+
+        List<MessageDto> messageDtoList = new ArrayList<>();
+        List<MessageDAO> messages = messageRepository.findByUser(user.getId());
+
+        messageDtoList  = prepareMessageDtoFromDAO(messages);
+
+        log.info("Fetch messages for user[id:{}] process ends", userId);
+
+        return messageDtoList;
+    }
+
+    @Override
+    public List<MessageDto> fetchOldChatByGroupId(Long groupId) {
+
+        List<MessageDto> messageDtoList = new ArrayList<>();
+
+        Optional<Group> groupOptional = groupRepository.findById(groupId);
+        if(groupOptional.isPresent()){
+            List<MessageDAO> messageDAOList = messageRepository.findMessageByGroup(groupOptional.get().getId());
+            messageDtoList = prepareMessageDtoFromDAO(messageDAOList);
+        }
+
+        return messageDtoList;
+    }
+
+    private List<MessageDto> prepareMessageDtoFromDAO(List<MessageDAO> messageDAOList){
+
+        List<MessageDto> messageDtoList = new ArrayList<>();
+
+        messageDAOList.forEach(message -> {
+
+            MessageDto messageDto = new MessageDto();
+            messageDto.setMessageId(message.getId());
+            messageDto.setContent(message.getContent());
+            messageDto.setSenderFullName(message.getSenderFirstName()+" "+message.getSenderLastName());
+            messageDto.setMessageTimestamp(message.getMessageTimestamp());
+            messageDto.setGroupId(message.getGroupId());
+
+            messageDtoList.add(messageDto);
+        });
+
+        return messageDtoList;
     }
 }

@@ -15,4 +15,8 @@ public interface ChatService {
     int countByUsers(String senderEmail, String receiverEmail);
 
     MessageDto sendMessage(MessageRequestDto messageRequestDto, String principal);
+
+    List<MessageDto> fetchOldChat(Long userId);
+
+    List<MessageDto> fetchOldChatByGroupId(Long groupId);
 }

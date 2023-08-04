@@ -9,9 +9,8 @@ import lombok.*;
 public class MessageDto {
 
     private long messageId;
-    private String senderEmail;
     private String senderFullName;
-    private String receiverEmail;
-    private String receiverFullName;
     private String content;
+    private String messageTimestamp;
+    private long groupId;
 }

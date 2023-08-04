@@ -47,6 +47,9 @@ public class PersistenceJPA {
                 env.getProperty("spring.jpa.hibernate.ddl-auto"));
         properties.put("spring.jpa.properties.hibernate.dialect",
                 env.getProperty("spring.jpa.properties.hibernate.dialect"));
+        properties.put("spring.jpa.properties.hibernate.enable_lazy_load_no_trans",
+                env.getProperty("spring.jpa.properties.hibernate.enable_lazy_load_no_trans"));
+
         em.setJpaPropertyMap(properties);
 
         return em;

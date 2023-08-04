@@ -2,6 +2,7 @@ package org.patsimas.chat.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
@@ -9,8 +10,6 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(exclude = {"sender", "receiver"})
-@ToString(exclude = {"sender", "receiver"})
 @Entity
 @Table(name = "messages")
 public class Message {
@@ -21,12 +20,12 @@ public class Message {
     private Long id;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "sender_id")
+    @JoinColumn(name = "sender_id",referencedColumnName = "id")
     private User sender;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "receiver_id")
-    private User receiver;
+    @JoinColumn(name = "group_id",referencedColumnName = "id")
+    private Group group;
 
     @Column(name = "content")
     private String content;

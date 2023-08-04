@@ -2,6 +2,7 @@ package org.patsimas.chat.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -11,7 +12,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(exclude = {"authorities"})
-@ToString(exclude = {"authorities"})
 @Entity
 @Table(name = "users")
 public class User {
@@ -20,6 +20,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
+
+    @Column(name="username",unique = true)
+    private String userName;
 
     @Column(name = "first_name")
     private String firstName;
@@ -37,7 +40,7 @@ public class User {
     private String email;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "user_authorities.sql", joinColumns =
+    @JoinTable(name = "user_authorities", joinColumns =
     @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "authority_id")
     )
     private List<Authority> authorities;

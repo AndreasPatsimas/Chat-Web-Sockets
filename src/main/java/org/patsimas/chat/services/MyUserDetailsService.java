@@ -7,12 +7,16 @@ import org.patsimas.chat.dto.users.MyUserDetails;
 import org.patsimas.chat.dto.users.UserDto;
 import org.patsimas.chat.repositories.UserRepository;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -21,30 +25,22 @@ import java.util.Optional;
 public class MyUserDetailsService implements UserDetailsService {
 
 	private final UserRepository userRepository;
-	private final ConversionService conversionService;
-
 
 	@Override
-	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-		log.info("Load user process [email: {}] start", email);
+		log.info("Load user process [username: {}] start", username);
 
-		Optional<User> user = userRepository.findByEmail(email);
+		Optional<User> user = userRepository.findByUserName(username);
 
 		if(user.isPresent()){
-
-			UserDto userDto = conversionService.convert(user.get(), UserDto.class);
-			if (!ObjectUtils.isEmpty(userDto))
-				userDto.setPassword(user.get().getPassword());
-
 			log.info("Load user process completed");
-
-			return new MyUserDetails(userDto);
+			MyUserDetails myUserDetails = new MyUserDetails(user.get());
+			return myUserDetails;
 		}
 
-		user.orElseThrow(() -> new UsernameNotFoundException("Not found " + email));
+		user.orElseThrow(() -> new UsernameNotFoundException("Not found " + username));
 
 		return null;
 	}
-
 }

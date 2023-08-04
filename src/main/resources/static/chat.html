@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat App</title>
+</head>
+<body>
+<h1>Chat App</h1>
+<form id="getAllUsers">
+    <button type="submit">Get All Users</button>
+</form>
+<div id="users"></div>
+<br>
+<form id="getFriends">
+    <button type="submit">Get Friends</button>
+</form>
+<div id="friends"></div>
+<br>
+<form id="getGroups">
+    <button type="submit">Get Groups</button>
+</form>
+<div id="groups"></div>
+<br>
+<form id="createGroup">
+    Create new Group
+    <input type="text" id="groupNameInput" />
+    <button type="submit">Send</button>
+</form>
+<br>
+New Messages : <br>
+<div id="chat"></div>
+<br>
+<form id="messageForm">
+    <input type="text" id="messageInput" />
+    <select id="dropdownList1"></select>
+    <button type="submit">Send</button>
+</form>
+<br>
+Old Messages : <Br>
+<div id="oldChat"></div>
+<br>
+<form id="oldMessages">
+    <select id="dropdownList2"></select>
+    <button type="submit">Get Messages</button>
+</form>
+<br>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.3.0/sockjs.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script>
+    const apiUrl = 'http://localhost:8081/chat/api';
+    const stompUrl = '/chat/api/ws';
+
+    const stompClient = Stomp.over(new SockJS(stompUrl));
+    const senderId = sessionStorage.getItem("userId");
+    const token = sessionStorage.getItem("token");
+
+    const headers = {
+        Authorization: 'Bearer ' + token
+    };
+
+    function connect() {
+        stompClient.connect(headers, function (frame) {
+            subscribeToUserQueue();
+        },function(frame){
+            console.log("Error in connecting to websocket");
+        });
+    }
+
+    function subscribeToUserQueue() {
+        const userQueue = "/user/" + senderId + "/queue/messages";
+        stompClient.subscribe(userQueue, function (message) {
+            showMessage(JSON.parse(message.body));
+        }, headers);
+    }
+
+    function showMessage(message) {
+        const chatDiv = document.getElementById('chat');
+        const p = document.createElement('p');
+        p.textContent = `Sender - ${message.sender.userName}, Content - ${message.content}`;
+        chatDiv.appendChild(p);
+    }
+
+    function sendMessage() {
+        const messageInput = document.getElementById('messageInput');
+        const recipientId = document.getElementById('dropdownList1').value;
+
+        const message = {
+            content: messageInput.value,
+            sender: senderId,
+            recipient: recipientId
+        };
+
+        console.log("Message sent to "+message.recipient);
+
+        stompClient.send("/app/chat", headers, JSON.stringify(message));
+        messageInput.value = '';
+        event.preventDefault();
+    }
+
+    document.getElementById('messageForm').addEventListener('submit', function (event) {
+        sendMessage();
+    });
+
+    document.getElementById('oldMessages').addEventListener('submit', function (event) {
+        event.preventDefault();   //line to prevent form submission
+        callApi();
+    });
+
+    document.getElementById('getAllUsers').addEventListener('submit', function (event) {
+        event.preventDefault();   //line to prevent form submission
+        callApiForUsers();
+    });
+
+    document.getElementById('getFriends').addEventListener('submit', function (event) {
+        event.preventDefault();   //line to prevent form submission
+        callApiForFriends();
+    });
+
+    document.getElementById('getGroups').addEventListener('submit', function (event) {
+        event.preventDefault();   //line to prevent form submission
+        callApiForGroups();
+    });
+
+    document.getElementById('createGroup').addEventListener('submit', function (event) {
+        event.preventDefault();   //line to prevent form submission
+        callApiForGroupCreation();
+    });
+
+    function disconnect() {
+        if (stompClient != null) {
+            stompClient.disconnect();
+        }
+        console.log("Disconnected");
+    }
+
+    connect();
+
+    // Function to make the API call for getting old chat
+    function callApi() {
+        const recipientId = document.getElementById('dropdownList2').value;
+        console.log("Get messages between sender = "+senderId+" and recipientId = "+recipientId);
+
+        fetch(`${apiUrl}/oldChat/${senderId}/${recipientId}`, {
+            method: "GET",
+            headers: headers,
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(messages => {
+                // Process the data received from the API
+                const chatDiv = document.getElementById('oldChat');
+                chatDiv.innerHTML = '';
+
+                messages.forEach(message => {
+                    console.log(message);
+                    const p = document.createElement('p');
+                    p.textContent = `${message.messageTimestamp}, User - ${message.senderFullName}, Content - ${message.content}`;
+                    chatDiv.appendChild(p);
+                    chatDiv.appendChild(document.createElement("br"));
+                });
+            })
+            .catch(error => {
+                // Handle any errors that occurred during the fetch
+                console.error('Error fetching data:', error);
+                const chatDiv = document.getElementById('oldChat');
+                chatDiv.innerText = 'Error occurred. Cannot load chat. Please select recipientId';
+            });
+    }
+
+    // Function to make the API call for getting all users
+    function callApiForUsers() {
+        fetch(`${apiUrl}/users`, {
+            method: "GET",
+            headers: headers,
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(messages => {
+                // Process the data received from the API
+                const chatDiv = document.getElementById('users');
+                chatDiv.innerHTML = '';
+
+                messages.forEach(message => {
+                    console.log(message);
+                    const p = document.createElement('p');
+                    p.textContent = `UserId - ${message.id}, FullName - ${message.fullName}`;
+                    chatDiv.appendChild(p);
+                    //chatDiv.appendChild(document.createElement("br"));
+                });
+            })
+            .catch(error => {
+                // Handle any errors that occurred during the fetch
+                console.error('Error fetching data:', error);
+                const chatDiv = document.getElementById('users');
+                chatDiv.innerText = 'Error occurred. Cannot load users.';
+            });
+    }
+
+    // Function to make the API call for getting all friends
+    function callApiForFriends() {
+        fetch(`${apiUrl}/friends/${senderId}`, {
+            method: "GET",
+            headers: headers,
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(messages => {
+                // Process the data received from the API
+                const chatDiv = document.getElementById('friends');
+                chatDiv.innerHTML = '';
+
+                messages.forEach(message => {
+                    console.log(message);
+                    const p = document.createElement('p');
+                    p.textContent = `${message.id}, Full Name - ${message.name}, Username - ${message.username}`;
+                    chatDiv.appendChild(p);
+                    chatDiv.appendChild(document.createElement("br"));
+                });
+            })
+            .catch(error => {
+                // Handle any errors that occurred during the fetch
+                console.error('Error fetching data:', error);
+                const chatDiv = document.getElementById('friends');
+                chatDiv.innerText = 'Error occurred. Cannot load friends.';
+            });
+    }
+
+    // Function to make the API call for getting all groups
+    function callApiForGroups() {
+        fetch(`${apiUrl}/group/${senderId}`, {
+            method: "GET",
+            headers: headers,
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(messages => {
+                // Process the data received from the API
+                const groupsDiv = document.getElementById('groups');
+                groupsDiv.innerHTML = '';
+
+                messages.forEach(message => {
+                    console.log(message);
+                    const p = document.createElement('p');
+                    p.textContent = `GroupId - ${message.id}, Group Name - ${message.groupName}`;
+                    groupsDiv.appendChild(p);
+                });
+            })
+            .catch(error => {
+                // Handle any errors that occurred during the fetch
+                console.error('Error fetching data:', error);
+                const chatDiv = document.getElementById('groups');
+                chatDiv.innerText = 'Error occurred. Cannot load groups.';
+            });
+    }
+
+    // Function to make the API call for getting all groups
+    function callApiForGroupCreation() {
+        const groupName = document.getElementById('groupNameInput').value;
+        fetch(`${apiUrl}/group/${groupName}/${senderId}`, {
+            method: "POST",
+            headers: headers,
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(message => {
+                // Process the data received from the API
+                const groupsDiv = document.getElementById('groups');
+                groupsDiv.innerHTML = '';
+
+                const p = document.createElement('p');
+                p.textContent = `GroupId - ${message.id}, Group Name - ${message.groupName}`;
+                groupsDiv.appendChild(p);
+            })
+            .catch(error => {
+                // Handle any errors that occurred during the fetch
+                console.error('Error fetching data:', error);
+                const chatDiv = document.getElementById('groups');
+                chatDiv.innerText = 'Error occurred. Cannot load groups.';
+            });
+    }
+
+    function fetchUsersFromServer() {
+        fetch(`${apiUrl}/users`,{
+            method: "GET",
+            headers: headers,
+        })
+            .then(response => response.json())
+            .then(data => {
+                const dropdown1 = document.getElementById('dropdownList1');
+                const dropdown2 = document.getElementById('dropdownList2');
+                // Call a function to populate the dropdown list with the fetched data
+                populateDropdown(dropdown1,data);
+                populateDropdown(dropdown2,data);
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+            });
+    }
+
+    function populateDropdown(dropdown,users) {
+        // Clear any existing options
+        dropdown.innerHTML = '';
+
+        // Create and append new options to the dropdown
+        users.forEach(user => {
+            const optionElement = document.createElement('option');
+            optionElement.textContent = user.id;
+            dropdown.appendChild(optionElement);
+        });
+    }
+
+    fetchUsersFromServer();
+
+</script>
+</body>
+</html>

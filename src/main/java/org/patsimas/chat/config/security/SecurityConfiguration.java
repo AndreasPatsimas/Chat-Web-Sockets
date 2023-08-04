@@ -27,7 +27,6 @@ public class SecurityConfiguration {
     private final JwtRequestFilter jwtRequestFilter;
     private final JwtAuthenticationEntryPoint unAuthorizedHandler;
 
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
@@ -35,11 +34,25 @@ public class SecurityConfiguration {
                 .exceptionHandling()
                 .authenticationEntryPoint(unAuthorizedHandler)
                 .and()
+                .headers()
+                .frameOptions()
+                .disable()
+                .and()
                 .authorizeHttpRequests()
+                .requestMatchers("/index.html").permitAll()
+                .requestMatchers("/chat.html").permitAll()
+                .requestMatchers("/ws").permitAll()
+                .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/authenticate").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
-                .and().sessionManagement()
+                .and()
+                .logout()
+                .logoutSuccessUrl("/index.html")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .and()
+                .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authenticationProvider(authenticationProvider())

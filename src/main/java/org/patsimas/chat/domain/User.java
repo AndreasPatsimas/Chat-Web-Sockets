@@ -12,7 +12,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(exclude = {"authorities"})
-@ToString(exclude = {"authorities"})
 @Entity
 @Table(name = "users")
 public class User {

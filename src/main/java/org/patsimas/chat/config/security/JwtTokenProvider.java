@@ -3,15 +3,10 @@ package org.patsimas.chat.config.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.patsimas.chat.dto.users.ValidTokenDto;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.WebUtils;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Date;
@@ -27,9 +22,6 @@ public class JwtTokenProvider {
 
     @Value("${jwt.expiration.milliseconds}")
     private int jwtExpirationInMs;
-
-    @Value("${jwt.cookieName}")
-    private String jwtCookie;
 
     public String extractUsername(String token){
         return extractClaim(token, Claims::getSubject);
@@ -49,14 +41,6 @@ public class JwtTokenProvider {
     public String generateToken(Map<String, Object> claims, String subject){
 
         return createToken(claims, subject, jwtExpirationInMs);
-    }
-
-    // Get user information from the token
-    public String getUsernameFromToken(String token) {
-        return Jwts.parser().setSigningKey(jwtSecret)
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
     }
 
     public ValidTokenDto validateToken(String token) {
@@ -106,10 +90,5 @@ public class JwtTokenProvider {
             e.printStackTrace();
         }
         return hostname;
-    }
-
-    public ResponseCookie getCleanJwtCookie() {
-        ResponseCookie cookie = ResponseCookie.from(jwtCookie, null).path("/api").build();
-        return cookie;
     }
 }

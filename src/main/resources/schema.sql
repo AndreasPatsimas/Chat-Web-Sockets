@@ -1,9 +1,3 @@
--- public.authorities definition
-
--- Drop table
-
--- DROP TABLE public.authorities;
-
 CREATE TABLE AUTHORITIES (
                                     id bigint NOT NULL,
                                     description varchar(50) NOT NULL,
@@ -11,13 +5,6 @@ CREATE TABLE AUTHORITIES (
                                     record_date timestamp NULL DEFAULT CURRENT_TIMESTAMP,
                                     CONSTRAINT authorities__pk PRIMARY KEY (id)
 );
-
-
--- public.users definition
-
--- Drop table
-
--- DROP TABLE public.users;
 
 CREATE TABLE users (
                               id int NOT NULL AUTO_INCREMENT,
@@ -30,34 +17,45 @@ CREATE TABLE users (
                               comments varchar(4000) NULL,
                               record_date timestamp NULL DEFAULT CURRENT_TIMESTAMP,
                               CONSTRAINT users__pk PRIMARY KEY (id),
-                              CONSTRAINT users_un UNIQUE (email)
+                              CONSTRAINT users_em UNIQUE (email),
+                              CONSTRAINT users_un UNIQUE (username)
 );
 
+CREATE TABLE friends (
+                         id INT PRIMARY KEY,
+                         user_id INT NOT NULL,
+                         friend_id INT NOT NULL,
+                         FOREIGN KEY (user_id) REFERENCES users(id),
+                         FOREIGN KEY (friend_id) REFERENCES users(id),
+                         UNIQUE (user_id, friend_id)
+);
 
--- public.messages definition
+CREATE TABLE groups (
+                                id int NOT NULL PRIMARY KEY AUTO_INCREMENT,
+                                group_name VARCHAR(100) NOT NULL,
+                                created_by INT NOT NULL,
+                                FOREIGN KEY (created_by) REFERENCES users(id)
+);
 
--- Drop table
+CREATE TABLE user_groups (
+                                id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+                                user_id INT NOT NULL,
+                                group_id INT NOT NULL,
+                                FOREIGN KEY (user_id) REFERENCES users(id),
+                                FOREIGN KEY (group_id) REFERENCES groups(id)
+);
 
--- DROP TABLE public.messages;
 
 CREATE TABLE messages (
-                                 id int NOT NULL AUTO_INCREMENT,
-                                 sender_id int4 NOT NULL,
-                                 recipient_id int4 NOT NULL,
+                                 id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+                                 sender_id INT NOT NULL,
+                                 group_id INT NOT NULL,
                                  content varchar NULL,
-                                 comments varchar(131072) NULL,
                                  recorddate timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-                                 CONSTRAINT pkmessage PRIMARY KEY (id),
-                                 CONSTRAINT fkreceiver FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE,
-                                 CONSTRAINT fksender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+                                 CONSTRAINT fksender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+                                 CONSTRAINT fkgroup FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
 );
 
-
--- public.user_authorities definition
-
--- Drop table
-
--- DROP TABLE public.user_authorities;
 
 CREATE TABLE user_authorities (
                                   id bigint NOT NULL,

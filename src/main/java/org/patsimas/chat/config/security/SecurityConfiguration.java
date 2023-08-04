@@ -3,7 +3,6 @@ package org.patsimas.chat.config.security;
 import lombok.RequiredArgsConstructor;
 import org.patsimas.chat.config.security.filters.JwtRequestFilter;
 import org.patsimas.chat.services.MyUserDetailsService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;

@@ -20,12 +20,12 @@ public class Message {
     private Long id;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "sender_id")
+    @JoinColumn(name = "sender_id",referencedColumnName = "id")
     private User sender;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "recipient_id")
-    private User recipient;
+    @JoinColumn(name = "group_id",referencedColumnName = "id")
+    private Group group;
 
     @Column(name = "content")
     private String content;

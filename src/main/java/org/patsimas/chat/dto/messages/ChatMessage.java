@@ -11,7 +11,14 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ChatMessage {
 
+    private MessageType messageType;
     private String content;
     private Long sender;
     private Long recipient;
+
+    public enum MessageType {
+        CHAT,
+        JOIN,
+        LEAVE
+    }
 }

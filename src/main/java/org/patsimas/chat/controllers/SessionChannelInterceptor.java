@@ -2,10 +2,11 @@ package org.patsimas.chat.controllers;
 
 import org.patsimas.chat.config.security.JwtTokenProvider;
 import org.patsimas.chat.services.MyUserDetailsService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
@@ -14,14 +15,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
-import org.springframework.util.MultiValueMap;
-
-import java.util.Map;
-import java.util.List;
 
 @Component
 public class SessionChannelInterceptor implements ChannelInterceptor {
 
+    private Logger logger = LoggerFactory.getLogger(SessionChannelInterceptor.class);
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
@@ -32,7 +30,7 @@ public class SessionChannelInterceptor implements ChannelInterceptor {
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
 
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
-        System.out.println("Interceptor for message "+message+" command" + accessor.getCommand());
+        logger.debug("Interceptor for message = {} , command = {}",message,accessor.getCommand());
         // Check if it's a CONNECT message (new connection) or a MESSAGE message (actual data sent)
         if (StompCommand.CONNECT.equals(accessor.getCommand())
                 || StompCommand.MESSAGE.equals(accessor.getCommand())) {
@@ -49,7 +47,7 @@ public class SessionChannelInterceptor implements ChannelInterceptor {
                 if (userDetails == null) {
                     throw new IllegalStateException("Unauthorized access. Please provide a valid JWT token.");
                 }
-                System.out.println("Token is valid, User found");
+                logger.debug("Token is valid, User found");
                 // Authenticate the user and set the user details in SecurityContextHolder
                 Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails.getUsername(), null);
                 SecurityContextHolder.getContext().setAuthentication(authentication);

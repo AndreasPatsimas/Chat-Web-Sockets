@@ -36,9 +36,9 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     List<MessageDAO> findByUser(@Param("userId") long userId);
 
     @Query(value = "Select m.id as id,m.group_id as groupId, m.content as content, users.first_name as senderFirstName, users.last_name as senderLastName, "+
-            "m.recorddate as messageTimestamp FROM messages as m JOIN user_groups as usergroup on usergroup.id = m.group_id "+
-            "JOIN users on users.id = usergroup.user_id "+
-            "WHERE usergroup.id = :groupId ORDER BY m.recorddate DESC"
+            "m.recorddate as messageTimestamp FROM messages as m JOIN groups on groups.id = m.group_id "+
+            "JOIN users on users.id = m.sender_id "+
+            "WHERE groups.id = :groupId ORDER BY m.recorddate DESC"
             , nativeQuery = true)
     List<MessageDAO> findMessageByGroup(@Param("groupId") long groupId);
 }

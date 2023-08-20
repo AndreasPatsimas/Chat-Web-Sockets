@@ -95,6 +95,39 @@ public class MessageController {
         return true;
     }
 
+    @MessageMapping("/groupChat")
+    public boolean handleGroupChat(ChatMessage chatMessage){
+
+        if(chatMessage==null || chatMessage.getSender()==null
+                || chatMessage.getContent()==null || chatMessage.getGroupId()==null){
+            logger.error("Invalid message {}",chatMessage);
+            return false;
+        }
+
+        Long senderId = chatMessage.getSender();
+        Long groupId = chatMessage.getGroupId();
+
+        Optional<User> sender = userRepository.findById(senderId);
+        Group group = groupService.getGroup(groupId);
+
+        Message message = new Message();
+        message.setSender(sender.get());
+        message.setContent(chatMessage.getContent());
+        message.setGroup(group);
+        message.setRecordDate(Instant.now());
+
+        message = messageRepository.save(message);
+
+        try {
+            messagingTemplate.convertAndSend("/topic/"+groupId, message);
+        }
+        catch(Exception ex){
+            logger.error("Exception occurred while sending message to group {}",ex);
+            return false;
+        }
+        return true;
+    }
+
     @GetMapping("/oldChat/{senderId}/{recipientId}")
     public ResponseEntity<List<MessageDto>> getOldMessagesOfGroup(@PathVariable Long senderId,@PathVariable Long recipientId){
 
@@ -114,13 +147,8 @@ public class MessageController {
     public ResponseEntity<List<MessageDto>> getOldMessagesOfGroup(@PathVariable Long groupId){
 
         List<MessageDto> messages = chatServiceImpl.fetchOldChatByGroupId(groupId);
+        return ResponseEntity.ok(messages);
 
-        if(messages.isEmpty()){
-            return ResponseEntity.noContent().build();
-        }
-        else{
-            return ResponseEntity.ok(messages);
-        }
     }
 
     public static String generateGroupId(String user1Id, String user2Id) {

@@ -17,11 +17,11 @@ public class UserGroup {
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "user_id",referencedColumnName = "id")
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "group_id",referencedColumnName = "id")
     private Group group;
 }

@@ -25,4 +25,8 @@ public class UserService {
 
         return usersDTOList;
     }
+
+    public User getUser(Long userId){
+        return userRepository.findById(userId).get();
+    }
 }

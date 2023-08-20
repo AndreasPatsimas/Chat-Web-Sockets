@@ -15,23 +15,13 @@
 </form>
 <div id="friends"></div>
 <br>
-<form id="getGroups">
-    <button type="submit">Get Groups</button>
-</form>
-<div id="groups"></div>
-<br>
-<form id="createGroup">
-    Create new Group
-    <input type="text" id="groupNameInput" />
-    <button type="submit">Send</button>
-</form>
-<br>
 New Messages : <br>
 <div id="chat"></div>
 <br>
 <form id="messageForm">
-    <input type="text" id="messageInput" />
+    Send message privately to user
     <select id="dropdownList1"></select>
+    <input type="text" id="messageInput" />
     <button type="submit">Send</button>
 </form>
 <br>
@@ -42,6 +32,41 @@ Old Messages : <Br>
     <select id="dropdownList2"></select>
     <button type="submit">Get Messages</button>
 </form>
+<br>
+<form id="createGroup">
+    Create new Group
+    <input type="text" id="groupNameInput" />
+    <button type="submit">Create</button>
+</form>
+<br>
+<form id="getGroups">
+    <button type="submit">Get Groups</button>
+</form>
+<div id="groups"></div>
+<br>
+<form id="addUserToGroup">
+    Add user to group<br><br>
+    Select User : <select id="usersList3"></select>
+    Select Group : <select id="groupsList3"></select>
+    <button type="submit">Add</button>
+</form>
+<div id="userGroup"></div>
+<br>
+Group Chat Messages :
+<form id="groupChatMessages">
+    <select id="groupsList1"></select>
+    <button type="submit">Get Group Messages</button>
+</form>
+<br>
+<div id="groupChat"></div>
+<br>
+<form id="groupMessageForm">
+    Send message to group
+    <select id="groupsList2"></select>
+    <input type="text" id="groupMessageInput" />
+    <button type="submit">Send</button>
+</form>
+<br>
 <br>
 
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.3.0/sockjs.min.js"></script>
@@ -73,8 +98,23 @@ Old Messages : <Br>
         }, headers);
     }
 
+    function subscribeToGroup(groupId) {
+        const topic = "/topic/"+groupId;
+        stompClient.subscribe(topic, function (message) {
+            //console.log("Message received on topic "+topic+", message "+message);
+            showGroupMessage(JSON.parse(message.body));
+        }, headers);
+    }
+
     function showMessage(message) {
         const chatDiv = document.getElementById('chat');
+        const p = document.createElement('p');
+        p.textContent = `Sender - ${message.sender.userName}, Content - ${message.content}`;
+        chatDiv.appendChild(p);
+    }
+
+    function showGroupMessage(message) {
+        const chatDiv = document.getElementById('groupChat');
         const p = document.createElement('p');
         p.textContent = `Sender - ${message.sender.userName}, Content - ${message.content}`;
         chatDiv.appendChild(p);
@@ -90,15 +130,37 @@ Old Messages : <Br>
             recipient: recipientId
         };
 
-        console.log("Message sent to "+message.recipient);
-
         stompClient.send("/app/chat", headers, JSON.stringify(message));
         messageInput.value = '';
         event.preventDefault();
     }
 
+    function sendMessageToGroup(){
+
+        const messageInput = document.getElementById('groupMessageInput');
+        const groupId = document.getElementById('groupsList2').value;
+
+        const message = {
+            content: messageInput.value,
+            sender: senderId,
+            groupId: groupId
+        };
+
+        console.log("Message sent to group "+message.groupId);
+
+        stompClient.send("/app/groupChat", headers, JSON.stringify(message));
+        messageInput.value = '';
+        event.preventDefault();
+    }
+
     document.getElementById('messageForm').addEventListener('submit', function (event) {
+        event.preventDefault();
         sendMessage();
+    });
+
+    document.getElementById('groupMessageForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+        sendMessageToGroup();
     });
 
     document.getElementById('oldMessages').addEventListener('submit', function (event) {
@@ -119,11 +181,23 @@ Old Messages : <Br>
     document.getElementById('getGroups').addEventListener('submit', function (event) {
         event.preventDefault();   //line to prevent form submission
         callApiForGroups();
+        fetchGroupsFromServer();
+        fetchUsersFromServer();
     });
 
     document.getElementById('createGroup').addEventListener('submit', function (event) {
         event.preventDefault();   //line to prevent form submission
         callApiForGroupCreation();
+    });
+
+    document.getElementById('groupChatMessages').addEventListener('submit', function (event) {
+        event.preventDefault();   //line to prevent form submission
+        callApiForGroupChat();
+    });
+
+    document.getElementById('addUserToGroup').addEventListener('submit', function (event) {
+        event.preventDefault();
+        callApiForAddUserToGroup();
     });
 
     function disconnect() {
@@ -156,7 +230,6 @@ Old Messages : <Br>
                 chatDiv.innerHTML = '';
 
                 messages.forEach(message => {
-                    console.log(message);
                     const p = document.createElement('p');
                     p.textContent = `${message.messageTimestamp}, User - ${message.senderFullName}, Content - ${message.content}`;
                     chatDiv.appendChild(p);
@@ -189,7 +262,6 @@ Old Messages : <Br>
                 chatDiv.innerHTML = '';
 
                 messages.forEach(message => {
-                    console.log(message);
                     const p = document.createElement('p');
                     p.textContent = `UserId - ${message.id}, FullName - ${message.fullName}`;
                     chatDiv.appendChild(p);
@@ -222,7 +294,6 @@ Old Messages : <Br>
                 chatDiv.innerHTML = '';
 
                 messages.forEach(message => {
-                    console.log(message);
                     const p = document.createElement('p');
                     p.textContent = `${message.id}, Full Name - ${message.name}, Username - ${message.username}`;
                     chatDiv.appendChild(p);
@@ -239,7 +310,7 @@ Old Messages : <Br>
 
     // Function to make the API call for getting all groups
     function callApiForGroups() {
-        fetch(`${apiUrl}/group/${senderId}`, {
+        fetch(`${apiUrl}/userGroup/${senderId}`, {
             method: "GET",
             headers: headers,
         })
@@ -249,15 +320,15 @@ Old Messages : <Br>
                 }
                 return response.json();
             })
-            .then(messages => {
+            .then(groups => {
                 // Process the data received from the API
                 const groupsDiv = document.getElementById('groups');
                 groupsDiv.innerHTML = '';
 
-                messages.forEach(message => {
-                    console.log(message);
+                groups.forEach(group => {
+                    subscribeToGroup(group.id);
                     const p = document.createElement('p');
-                    p.textContent = `GroupId - ${message.id}, Group Name - ${message.groupName}`;
+                    p.textContent = `GroupId - ${group.id}, Group Name - ${group.groupName}`;
                     groupsDiv.appendChild(p);
                 });
             })
@@ -269,7 +340,7 @@ Old Messages : <Br>
             });
     }
 
-    // Function to make the API call for getting all groups
+    // Function to make the API call for creating a group by user
     function callApiForGroupCreation() {
         const groupName = document.getElementById('groupNameInput').value;
         fetch(`${apiUrl}/group/${groupName}/${senderId}`, {
@@ -288,7 +359,7 @@ Old Messages : <Br>
                 groupsDiv.innerHTML = '';
 
                 const p = document.createElement('p');
-                p.textContent = `GroupId - ${message.id}, Group Name - ${message.groupName}`;
+                p.textContent = `New group created -> GroupId - ${message.id}, Group Name - ${message.groupName}`;
                 groupsDiv.appendChild(p);
             })
             .catch(error => {
@@ -299,6 +370,63 @@ Old Messages : <Br>
             });
     }
 
+    function callApiForGroupChat() {
+        const groupId = document.getElementById('groupsList1').value;
+        fetch(`${apiUrl}/oldChat/${groupId}`, {
+            method: "GET",
+            headers: headers,
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(messages => {
+                // Process the data received from the API
+                const groupChatDiv = document.getElementById('groupChat');
+                groupChatDiv.innerHTML = '';
+
+                messages.forEach(message => {
+                    const p = document.createElement('p');
+                    p.textContent = `TimeStamp - ${message.messageTimestamp}, Sender - ${message.senderFullName}, Message - ${message.content}`;
+                    groupChatDiv.appendChild(p);
+                });
+            })
+            .catch(error => {
+                // Handle any errors that occurred during the fetch
+                console.error('Error fetching data:', error);
+                const groupChat = document.getElementById('groupChat');
+                groupChat.innerText = 'Error occurred. Cannot load group chat';
+            });
+    }
+
+    function callApiForAddUserToGroup(){
+        const groupId = document.getElementById('groupsList3').value;
+        const userId = document.getElementById('usersList3').value;
+        fetch(`${apiUrl}/userGroup/${groupId}/${userId}`, {
+            method: "POST",
+            headers: headers,
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                // Process the data received from the API
+                const userGroupDiv = document.getElementById('userGroup');
+                userGroupDiv.innerHTML = '';
+
+                const p = document.createElement('p');
+                p.textContent = `User added to group`;
+                userGroupDiv.appendChild(p);
+            })
+            .catch(error => {
+                // Handle any errors that occurred during the fetch
+                console.error('Error fetching data:', error);
+                const userGroup = document.getElementById('userGroup');
+                userGroup.innerText = 'Error occurred';
+            });
+    }
     function fetchUsersFromServer() {
         fetch(`${apiUrl}/users`,{
             method: "GET",
@@ -308,16 +436,19 @@ Old Messages : <Br>
             .then(data => {
                 const dropdown1 = document.getElementById('dropdownList1');
                 const dropdown2 = document.getElementById('dropdownList2');
+                const dropdown3 = document.getElementById('usersList3');
+
                 // Call a function to populate the dropdown list with the fetched data
-                populateDropdown(dropdown1,data);
-                populateDropdown(dropdown2,data);
+                populateUserDropdown(dropdown1,data);
+                populateUserDropdown(dropdown2,data);
+                populateUserDropdown(dropdown3,data);
             })
             .catch(error => {
                 console.error('Error fetching data:', error);
             });
     }
 
-    function populateDropdown(dropdown,users) {
+    function populateUserDropdown(dropdown,users) {
         // Clear any existing options
         dropdown.innerHTML = '';
 
@@ -330,6 +461,39 @@ Old Messages : <Br>
     }
 
     fetchUsersFromServer();
+
+    function fetchGroupsFromServer() {
+        fetch(`${apiUrl}/userGroup/${senderId}`, {
+            method: "GET",
+            headers: headers,
+        })
+            .then(response => response.json())
+            .then(groups => {
+                const dropdown1 = document.getElementById('groupsList1');
+                const dropdown2 = document.getElementById('groupsList2');
+                const dropdown3 = document.getElementById('groupsList3');
+
+                populateGroupsDropdown(dropdown1,groups);
+                populateGroupsDropdown(dropdown2,groups);
+                populateGroupsDropdown(dropdown3,groups);
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+            });
+    }
+
+    fetchGroupsFromServer();
+
+    function populateGroupsDropdown(dropdown,groups){
+        dropdown.innerHTML = '';
+
+        // Create and append new options to the dropdown
+        groups.forEach(group => {
+            const optionElement = document.createElement('option');
+            optionElement.textContent = group.id;
+            dropdown.appendChild(optionElement);
+        });
+    }
 
 </script>
 </body>

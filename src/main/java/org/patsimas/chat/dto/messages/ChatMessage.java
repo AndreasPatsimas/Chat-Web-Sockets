@@ -15,6 +15,7 @@ public class ChatMessage {
     private String content;
     private Long sender;
     private Long recipient;
+    private Long groupId;
 
     public enum MessageType {
         CHAT,

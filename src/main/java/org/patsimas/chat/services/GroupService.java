@@ -3,8 +3,10 @@ package org.patsimas.chat.services;
 import org.patsimas.chat.dao.GroupDAO;
 import org.patsimas.chat.domain.Group;
 import org.patsimas.chat.domain.User;
+import org.patsimas.chat.domain.UserGroup;
 import org.patsimas.chat.dto.groups.GroupDTO;
 import org.patsimas.chat.repositories.GroupRepository;
+import org.patsimas.chat.repositories.UserGroupRepository;
 import org.patsimas.chat.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,9 @@ public class GroupService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserGroupRepository userGroupRepository;
 
     public GroupDTO getGroup(String groupName, User user){
 
@@ -77,6 +82,13 @@ public class GroupService {
         group.setCreatedByUser(userOptional.get());
 
         group = groupRepository.save(group);
+
+        UserGroup userGroup = new UserGroup();
+        userGroup.setGroup(group);
+        userGroup.setUser(userOptional.get());
+
+
+        userGroupRepository.save(userGroup);
 
         GroupDTO groupDTO = new GroupDTO();
         groupDTO.setId(group.getId());
